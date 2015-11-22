@@ -164,7 +164,8 @@ always_comb begin
 		end
 	endcase
 end
-	I2cSender i2csender(?)(
+
+	I2cSender i2csender#(.BYTE(3))(
 		.i_start(i_start),
 		.i_dat(i2c_dat),
 		.i_clk(i_clk),
