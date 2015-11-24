@@ -135,8 +135,21 @@ module DE2_115(
 	output [16:0] HSMC_TX_D_P,
 	inout [6:0] EX_IO
 );
+
+	assign LCD_ON = 1'b1;
+	assign LCD_BLON = 1'b1;
+	logic clk_12m, clk_100k;
+	
+	wire DLY_RST;
+
+	logic [7:0] p[31:0];
+	assign {p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],p[12],p[13],p[14],p[15]}           = "we are DCLAB Q_Q";
+	assign {p[16],p[17],p[18],p[19],p[20],p[21],p[22],p[23],p[24],p[25],p[26],p[27],p[28],p[29],p[30],p[31]} = "Coooooooooooooon";
+	
+	logic[2:0] debug;
+	
 	SevenHexDecoder seven_dec0(
-		.i_hex(debug_num),
+		.i_hex(debug),
 		.o_seven_1(HEX0),
 		.o_seven_2(HEX1),
 		.o_seven_3(HEX2),
@@ -145,5 +158,53 @@ module DE2_115(
 		.o_seven_6(HEX5),
 		.o_seven_7(HEX6),
 		.o_seven_8(HEX7)
+	);
+	Reset_Delay r0(
+		.i_clk(clk_12m),
+		.o_rst(DLY_RST)
+	);
+	LCD_TEST lcd0(    
+		//    Host Side
+		.i_clk(clk_12m),
+      .i_RST_N(DLY_RST),
+		.i_p(p),
+      //    LCD Side
+      .LCD_DATA(LCD_DATA),
+      .LCD_RW(LCD_RW),
+      .LCD_EN(LCD_EN),
+      .LCD_RS(LCD_RS)
+	);
+	Main m0(
+		.i_clk(clk_12m),
+		.i2c_clk(clk_100k),
+		.i_rst(i_rst),
+		///debug
+		.o_debug(debug),
+		
+		//controller
+		.i_sw(SW),
+		//CODEC
+		.o_i2c_sclk(I2C_SCLK),
+		.o_i2c_sdat(I2C_SDAT),
+		.i_aud_adclrck(AUD_ADCLRCK),
+		.i_aud_adcdat(AUD_ADCDAT),
+		.i_aud_daclrck(AUD_DACLRCK),
+		.o_aud_dacdat(AUD_DACDAT),
+		.i_aud_bclk(AUD_BCLK),
+		.o_aud_xck(AUD_XCK),
+		//SRAM
+		.io_sram_dq(SRAM_DQ),
+		.o_sram_oe(SRAM_OE_N),
+		.o_sram_we(SRAM_WE_N),
+		.o_sram_ce(SRAM_CE_N),
+		.o_sram_lb(SRAM_LB_N),
+		.o_sram_ub(SRAM_UB_N),
+		.o_sram_addr(SRAM_ADDR)
+	);
+	lab3 qsys(
+		.clk_clk(CLOCK_50),
+		.id100k_clk(clk_100k),
+		.id12m_clk(clk_12m),
+		.reset_reset_n(KEY[0])
 	);
 endmodule

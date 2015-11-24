@@ -1,8 +1,9 @@
-module I2cSender #(parameter BYTE=1) (
+module I2cSender #(parameter BYTE=3) (
 	input i_start,
 	input [BYTE*8-1:0] i_dat,
 	input i_clk,
-	input i_rst, output o_finished,
+	input i_rst,
+	output o_finished,
 	output o_sclk,
 	inout o_sdat
 );
@@ -133,5 +134,5 @@ endmodule
 module inout_port(input i_oe, inout io_sda, output o_i, input i_o);
 logic i, o;
 assign io_sda = i_oe? i_o: 1'bz;
-assign o_i = i_oe? 1'bz: io_sda;
+assign o_i = io_sda;
 endmodule
