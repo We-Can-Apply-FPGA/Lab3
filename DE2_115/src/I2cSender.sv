@@ -2,10 +2,10 @@ module I2cSender #(parameter BYTE=3) (
 	input i_start,
 	input [BYTE*8-1:0] i_dat,
 	input i_clk,
-	input i_rst,
+	input i_rst_n,
 	output o_finished,
 	output o_sclk,
-	inout o_sdat
+	inout io_sdat
 );
 
 localparam S_IDLE = 0;
@@ -20,16 +20,14 @@ logic [1:0] counter_r, counter_w;
 logic [BYTE*8-1:0] data_r, data_w;
 logic oe_r, oe_w;
 logic sdat_r, sdat_w;
-logic ack;
 
 assign o_finished = (state_r == 0);
 assign o_sclk = (counter_r == 2);
 
 inout_port io(
 	.i_oe(oe_r),
-	.io_sda(o_sdat),
-	.o_i(ack),
-	.i_o(sdat_r)
+	.io(io_sdat),
+	.i(sdat_r)
 );
 
 always_comb begin
@@ -109,8 +107,8 @@ always_comb begin
 	endcase
 end
 
-always_ff @(posedge i_clk or negedge i_rst) begin
-	if (!i_rst) begin
+always_ff @(posedge i_clk or negedge i_rst_n) begin
+	if (!i_rst_n) begin
 		state_r <= S_IDLE;
 		data_r <= 0;
 		oe_r = 0;
@@ -131,8 +129,6 @@ always_ff @(posedge i_clk or negedge i_rst) begin
 end
 endmodule
 
-module inout_port(input i_oe, inout io_sda, output o_i, input i_o);
-logic i, o;
-assign io_sda = i_oe? i_o: 1'bz;
-assign o_i = io_sda;
+module inout_port(input i_oe, inout io, input i);
+assign io = i_oe? i: 1'bz;
 endmodule

@@ -136,18 +136,42 @@ module DE2_115(
 	inout [6:0] EX_IO
 );
 
-	assign LCD_ON = 1'b1;
-	assign LCD_BLON = 1'b1;
+	logic [7:0] p[31:0];
 	logic clk_12m, clk_100k;
+	logic[31:0] debug;
+	logic rst;
+	logic [17:0] sw;
 	
 	wire DLY_RST;
-
-	logic [7:0] p[31:0];
+	assign LCD_ON = 1'b1;
+	assign LCD_BLON = 1'b1;
 	assign {p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],p[12],p[13],p[14],p[15]}           = "we are DCLAB Q_Q";
 	assign {p[16],p[17],p[18],p[19],p[20],p[21],p[22],p[23],p[24],p[25],p[26],p[27],p[28],p[29],p[30],p[31]} = "Coooooooooooooon";
 	
-	logic[7:0] debug;
+	assign AUD_XCK = clk_12m;
+	assign rst_n = ~rst;
+	assign debug = AUD_ADCDAT*10 + AUD_ADCLRCK;
 	
+	Debounce deb_rst(
+		.i_in(KEY[0]),
+		.i_clk(CLOCK_50),
+		.o_neg(rst)
+	);
+	Debounce deb_sw0(
+		.i_in(SW[0]),
+		.i_clk(CLOCK_50),
+		.o_pos(sw[0])
+	);
+	Debounce deb_sw1(
+		.i_in(SW[1]),
+		.i_clk(CLOCK_50),
+		.o_pos(sw[1])
+	);
+	Debounce deb_sw2(
+		.i_in(SW[2]),
+		.i_clk(CLOCK_50),
+		.o_pos(sw[2])
+	);
 	SevenHexDecoder seven_dec0(
 		.i_hex(debug),
 		.o_seven_1(HEX0),
@@ -176,23 +200,17 @@ module DE2_115(
 	);
 	Main m0(
 		.i_clk(clk_12m),
-		.i2c_clk(clk_100k),
-		.i_rst(KEY[0]),
-		///debug
-		.o_debug(debug),
+		.i_rst_n(rst_n),
 		
-		//controller
-		.i_sw(SW),
-		//CODEC
-		.o_i2c_sclk(I2C_SCLK),
-		.o_i2c_sdat(I2C_SDAT),
+
 		.i_aud_adclrck(AUD_ADCLRCK),
 		.i_aud_adcdat(AUD_ADCDAT),
 		.i_aud_daclrck(AUD_DACLRCK),
 		.o_aud_dacdat(AUD_DACDAT),
 		.i_aud_bclk(AUD_BCLK),
-		.o_aud_xck(AUD_XCK),
-		//SRAM
+
+		.i_sw(sw),
+		/*
 		.io_sram_dq(SRAM_DQ),
 		.o_sram_oe(SRAM_OE_N),
 		.o_sram_we(SRAM_WE_N),
@@ -200,11 +218,18 @@ module DE2_115(
 		.o_sram_lb(SRAM_LB_N),
 		.o_sram_ub(SRAM_UB_N),
 		.o_sram_addr(SRAM_ADDR)
+		*/
+	);
+	SetCodec init(
+		.i_clk(clk_100k),
+		.i_rst_n(rst_n),
+		.o_sclk(I2C_SCLK),
+		.io_sdat(I2C_SDAT),
 	);
 	lab3 qsys(
 		.clk_clk(CLOCK_50),
 		.id100k_clk(clk_100k),
 		.id12m_clk(clk_12m),
-		.reset_reset_n(KEY[0])
+		.reset_reset_n(rst_n)
 	);
 endmodule
