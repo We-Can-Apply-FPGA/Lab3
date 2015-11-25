@@ -146,7 +146,7 @@ module DE2_115(
 	assign {p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],p[12],p[13],p[14],p[15]}           = "we are DCLAB Q_Q";
 	assign {p[16],p[17],p[18],p[19],p[20],p[21],p[22],p[23],p[24],p[25],p[26],p[27],p[28],p[29],p[30],p[31]} = "Coooooooooooooon";
 	
-	logic[2:0] debug;
+	logic[7:0] debug;
 	
 	SevenHexDecoder seven_dec0(
 		.i_hex(debug),
@@ -160,12 +160,12 @@ module DE2_115(
 		.o_seven_8(HEX7)
 	);
 	Reset_Delay r0(
-		.i_clk(clk_12m),
+		.i_clk(CLOCK_50),
 		.o_rst(DLY_RST)
 	);
 	LCD_TEST lcd0(    
 		//    Host Side
-		.i_clk(clk_12m),
+		.i_clk(CLOCK_50),
       .i_RST_N(DLY_RST),
 		.i_p(p),
       //    LCD Side
@@ -177,7 +177,7 @@ module DE2_115(
 	Main m0(
 		.i_clk(clk_12m),
 		.i2c_clk(clk_100k),
-		.i_rst(i_rst),
+		.i_rst(KEY[0]),
 		///debug
 		.o_debug(debug),
 		

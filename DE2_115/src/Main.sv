@@ -5,7 +5,7 @@ module Main(
 	
 	
 	//debug
-	output [2:0] o_debug,
+	output [7:0] o_debug,
 	//controller
 	input [17:0] i_sw,
 
@@ -55,7 +55,9 @@ assign init_data[5] = 24'b001101000001001000000001; //active
 localparam PTR_DUMMY=0;
 localparam PTR_WRITE=1;
 localparam PTR_READ=2;
-assign o_debug = init_cnt_r;
+assign o_debug[2:0] = main_state_r;
+assign o_debug[7:3] = i_aud_adcdat;
+//assign o_debug[6] = i_rst;
 
 logic[23:0] i2c_dat;
 logic i2c_finish, i2c_start_r, i2c_start_w;
@@ -67,7 +69,6 @@ logic rst_ptr;
 
 
 always_comb begin
-	
 	i2c_dat = init_data[5];
 	i2c_start_w = 0;
 	main_state_w = main_state_r;
@@ -85,27 +86,15 @@ always_comb begin
 			else if(i_sw[0] == 1 && i_sw[1] == 0 && i_sw[2] == 1)begin
 				main_state_w = S_PLAY;
 			end
-			else begin
-				main_state_w = S_IDLE;
-			end
 		end
 		S_INIT:begin
 			if(init_cnt_r != 6) begin
 				i2c_dat = init_data[init_cnt_r];
 				i2c_start_w = 1;
-				init_cnt_w = init_cnt_r + 1;
 				main_state_w = S_INIT_WAIT;
 			end
 			else begin
-				if(i_sw[0] == 1 && i_sw[1] == 1 && i_sw[2] == 0)begin
-					main_state_w = S_RECORD;
-				end
-				else if(i_sw[0] == 1 && i_sw[1] == 0 && i_sw[2] == 1)begin
-					main_state_w = S_PLAY;
-				end
-				else begin
-					main_state_w = S_IDLE;
-				end
+				main_state_w = S_IDLE;
 			end
 		end
 		S_INIT_WAIT:begin
@@ -129,19 +118,14 @@ always_comb begin
 		end
 		S_PLAY:begin
 			mem_ptr_type_w = PTR_READ;
-			if(i_sw[17] == 0)begin
-				main_state_w = S_IDLE;
+			if(i_sw[0] == 1 && i_sw[1] == 0 && i_sw[2] == 1) begin
+				main_state_w = S_PLAY;
+			end
+			else if(i_sw[0] == 0 && i_sw[1] == 0 && i_sw[2] == 1)begin
+				main_state_w = S_PLAY_PAUSE;
 			end
 			else begin
-				if(i_sw[0] == 1 && i_sw[1] == 0 && i_sw[2] == 1) begin
-					main_state_w = S_PLAY;
-				end
-				else if(i_sw[0] == 0 && i_sw[1] == 0 && i_sw[2] == 1)begin
-					main_state_w = S_PLAY_PAUSE;
-				end
-				else begin
-					main_state_w = S_IDLE;
-				end
+				main_state_w = S_IDLE;
 			end
 		end
 		S_RECORD_PAUSE:begin
@@ -158,15 +142,15 @@ always_comb begin
 		end
 		S_PLAY_PAUSE:begin
 			mem_ptr_type_w = PTR_WRITE;
-				if(i_sw[0] == 0 && i_sw[1] == 0 && i_sw[2] == 1)begin
-					main_state_w = S_PLAY_PAUSE;
-				end
-				else if(i_sw[0] == 1 && i_sw[1] == 0 && i_sw[2] == 1) begin
-					main_state_w = S_PLAY;
-				end
-				else begin
-					main_state_w = S_IDLE;
-				end
+			if(i_sw[0] == 0 && i_sw[1] == 0 && i_sw[2] == 1)begin
+				main_state_w = S_PLAY_PAUSE;
+			end
+			else if(i_sw[0] == 1 && i_sw[1] == 0 && i_sw[2] == 1) begin
+				main_state_w = S_PLAY;
+			end
+			else begin
+				main_state_w = S_IDLE;
+			end
 		end
 		//S_STOP:begin
 			//rst_ptr=1;
@@ -186,6 +170,7 @@ always_comb begin
 				//end
 			//end
 		//end
+		default:main_state_w = S_IDLE;
 	endcase
 	/*
 	case(mem_ptr_type_r)
