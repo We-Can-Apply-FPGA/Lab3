@@ -220,12 +220,12 @@ module DE2_115(
 		.o_sram_addr(SRAM_ADDR)
 		*/
 	);
-	SetCodec init(
-		.i_clk(clk_100k),
-		.i_rst_n(rst_n),
-		.o_sclk(I2C_SCLK),
-		.io_sdat(I2C_SDAT),
-	);
+	//SetCodec init(
+		//.i_clk(clk_100k),
+		//.i_rst_n(rst_n),
+		//.o_sclk(I2C_SCLK),
+		//.io_sdat(I2C_SDAT),
+	//);
 	lab3 qsys(
 		.clk_clk(CLOCK_50),
 		.id100k_clk(clk_100k),

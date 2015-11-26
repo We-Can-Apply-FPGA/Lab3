@@ -13,17 +13,21 @@ module Main(
 );
 
 localparam S_INIT = 0;
-localparam S_IDLE = 1;
-localparam S_RECORD = 2;
-localparam S_PLAY = 3;
-localparam S_RECORD_PAUSE = 4;
-localparam S_PLAY_PAUSE = 5;
+localparam S_INIT_WAIT=1;
+localparam S_IDLE = 2;
+localparam S_RECORD = 3;
+localparam S_PLAY = 4;
+localparam S_RECORD_PAUSE = 5;
+localparam S_PLAY_PAUSE = 6;
 
 logic[2:0] main_state_r,main_state_w;
 logic [31:0] debug_r, debug_w;
 logic [10:0] clk_r, clk_w;
-assign debug = debug_r;
+logic init_finish;
+logic rst_n;
 
+assign rst_n = i_rst_n;
+assign debug = debug_r;
 
 always_comb begin
 	main_state_w = main_state_r;
@@ -31,8 +35,11 @@ always_comb begin
 	clk_w = clk_r;
 	case(main_state_r)
 		S_INIT: begin
-			if (clk_r < 15000) clk_w = clk_r + 1;
-			else main_state_w = S_IDLE;
+			if(!rst_n)  main_state_w = S_INIT_WAIT;
+			else main_state_w =S_INIT;
+		end
+		S_INIT_WAIT:begin
+			if(init_finish) main_state_w = S_IDLE;
 		end
 		S_IDLE: begin
 			if(i_sw[0] == 1 && i_sw[1] == 1 && i_sw[2] == 0) begin
@@ -100,6 +107,13 @@ always_ff @(posedge i_clk or negedge i_rst_n) begin
 		clk_r <= clk_w;
 	end
 end
+	SetCodec init(
+		.i_clk(clk_100k),
+		.i_rst_n(rst_n),
+		.o_sclk(I2C_SCLK),
+		.io_sdat(I2C_SDAT),
+		.o_init_finish(init_finish)
+	);
 	/*
 	SRamMgr memory(
 		.i_clk(i_clk),
