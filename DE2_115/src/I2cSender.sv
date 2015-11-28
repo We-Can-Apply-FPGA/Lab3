@@ -5,7 +5,8 @@ module I2cSender #(parameter BYTE=3) (
 	input i_rst_n,
 	output o_finished,
 	output o_sclk,
-	inout io_sdat
+	inout io_sdat,
+	output debug
 );
 
 localparam S_IDLE = 0;
@@ -17,11 +18,12 @@ logic [1:0] state_r, state_w;
 logic [4:0] byte_counter_r, byte_counter_w;
 logic [2:0] bit_counter_r, bit_counter_w;
 logic [1:0] counter_r, counter_w;
+logic [31:0] debug_w, debug_r;
 logic [BYTE*8-1:0] data_r, data_w;
 logic oe_r, oe_w;
 logic sdat_r, sdat_w;
 
-assign o_finished = (state_r == 0);
+assign o_finished = (state_r == 0) && !i_start;
 assign o_sclk = (counter_r == 2);
 
 inout_port io(
@@ -38,6 +40,8 @@ always_comb begin
 	byte_counter_w = byte_counter_r;
 	bit_counter_w = bit_counter_r;
 	counter_w = counter_r;
+	
+	debug_w = debug_r;
 	if (state_r != S_IDLE) begin
 		case(counter_r)
 			2: begin
@@ -77,6 +81,7 @@ always_comb begin
 						oe_w = 0;
 					end
 					else begin
+						if (io_sdat == 0) debug_w = debug_r + 1;
 						oe_w = 1;
 						if (!byte_counter_r) begin
 							state_w = S_END;
@@ -111,11 +116,13 @@ always_ff @(posedge i_clk or negedge i_rst_n) begin
 	if (!i_rst_n) begin
 		state_r <= S_IDLE;
 		data_r <= 0;
-		oe_r = 0;
+		oe_r <= 1;
 		sdat_r <= 1;
 		byte_counter_r <= 0;
 		bit_counter_r <= 0;
 		counter_r <= 2;
+		
+		debug_r <= 0;
 	end
 	else begin
 		state_r <= state_w;
@@ -125,6 +132,8 @@ always_ff @(posedge i_clk or negedge i_rst_n) begin
 		byte_counter_r <= byte_counter_w;
 		bit_counter_r <= bit_counter_w;
 		counter_r <= counter_w;
+		
+		debug_r <= debug_w;
 	end
 end
 endmodule

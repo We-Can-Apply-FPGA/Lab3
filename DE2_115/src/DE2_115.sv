@@ -138,8 +138,8 @@ module DE2_115(
 
 	logic [7:0] p[31:0];
 	logic clk_12m, clk_100k;
-	logic[31:0] debug;
-	logic rst;
+	logic [31:0] debug;
+	logic rst, rst_n;
 	logic [17:0] sw;
 	
 	wire DLY_RST;
@@ -149,28 +149,56 @@ module DE2_115(
 	assign {p[16],p[17],p[18],p[19],p[20],p[21],p[22],p[23],p[24],p[25],p[26],p[27],p[28],p[29],p[30],p[31]} = "Coooooooooooooon";
 	
 	assign AUD_XCK = clk_12m;
-	assign rst_n = ~rst;
-	assign debug = AUD_ADCDAT*10 + AUD_ADCLRCK;
+	//assign debug = AUD_ADCDAT*10 + AUD_ADCLRCK;
+	//assign debug[7:5] = sw[2:0];
+	//assign debug[4] = rst;
+	//assign debug[2:0] = SW[2:0];
+	//assign debug[3] = 1'b1;
 	
 	Debounce deb_rst(
 		.i_in(KEY[0]),
 		.i_clk(CLOCK_50),
-		.o_neg(rst)
+		.o_debounced(rst_n)
 	);
 	Debounce deb_sw0(
 		.i_in(SW[0]),
 		.i_clk(CLOCK_50),
-		.o_pos(sw[0])
+		.o_debounced(sw[0])
 	);
 	Debounce deb_sw1(
 		.i_in(SW[1]),
 		.i_clk(CLOCK_50),
-		.o_pos(sw[1])
+		.o_debounced(sw[1])
 	);
 	Debounce deb_sw2(
 		.i_in(SW[2]),
 		.i_clk(CLOCK_50),
-		.o_pos(sw[2])
+		.o_debounced(sw[2])
+	);
+	Debounce deb_sw3(
+		.i_in(SW[3]),
+		.i_clk(CLOCK_50),
+		.o_debounced(sw[3])
+	);
+	Debounce deb_sw4(
+		.i_in(SW[4]),
+		.i_clk(CLOCK_50),
+		.o_debounced(sw[4])
+	);
+	Debounce deb_sw5(
+		.i_in(SW[5]),
+		.i_clk(CLOCK_50),
+		.o_debounced(sw[5])
+	);
+	Debounce deb_sw6(
+		.i_in(SW[6]),
+		.i_clk(CLOCK_50),
+		.o_debounced(sw[6])
+	);
+	Debounce deb_sw7(
+		.i_in(SW[7]),
+		.i_clk(CLOCK_50),
+		.o_debounced(sw[7])
 	);
 	SevenHexDecoder seven_dec0(
 		.i_hex(debug),
@@ -199,9 +227,12 @@ module DE2_115(
       .LCD_RS(LCD_RS)
 	);
 	Main m0(
-		.i_clk(clk_12m),
+		.i_clk_12m(clk_12m),
+		.i_clk_100k(clk_100k),
 		.i_rst_n(rst_n),
 		
+		.o_sclk(I2C_SCLK),
+		.io_sdat(I2C_SDAT),
 
 		.i_aud_adclrck(AUD_ADCLRCK),
 		.i_aud_adcdat(AUD_ADCDAT),
@@ -209,7 +240,10 @@ module DE2_115(
 		.o_aud_dacdat(AUD_DACDAT),
 		.i_aud_bclk(AUD_BCLK),
 
-		.i_sw(sw),
+		.i_sw(sw[7:0]),
+		
+		.debug(debug)
+		
 		/*
 		.io_sram_dq(SRAM_DQ),
 		.o_sram_oe(SRAM_OE_N),
@@ -221,10 +255,6 @@ module DE2_115(
 		*/
 	);
 	//SetCodec init(
-		//.i_clk(clk_100k),
-		//.i_rst_n(rst_n),
-		//.o_sclk(I2C_SCLK),
-		//.io_sdat(I2C_SDAT),
 	//);
 	lab3 qsys(
 		.clk_clk(CLOCK_50),

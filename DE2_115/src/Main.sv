@@ -1,14 +1,18 @@
 module Main(
-	input i_clk,
+	input i_clk_12m,
+	input i_clk_100k,
 	input i_rst_n,
-
+	
+	input o_sclk,
+	inout io_sdat,
+	
 	input i_aud_adclrck,
 	input i_aud_adcdat,
 	input i_aud_daclrck,
 	output o_aud_dacdat,
 	input i_aud_bclk,
 
-	input [2:0] i_sw,
+	input [7:0] i_sw,
 	output [31:0] debug
 );
 
@@ -20,33 +24,39 @@ localparam S_PLAY = 4;
 localparam S_RECORD_PAUSE = 5;
 localparam S_PLAY_PAUSE = 6;
 
-logic[2:0] main_state_r,main_state_w;
+localparam PTR_DUMMY=0;
+localparam PTR_WRITE=1;
+localparam PTR_READ=2;
+
+logic[2:0] main_state_r, main_state_w;
 logic [31:0] debug_r, debug_w;
 logic [10:0] clk_r, clk_w;
-logic init_finish;
-logic rst_n;
+logic init_finish, rst_ptr;
+logic [1:0] mem_ptr_type_r, mem_ptr_type_w;
 
-assign rst_n = i_rst_n;
-assign debug = debug_r;
+assign debug[0]=i_aud_adclrck;
+assign debug[3]=i_aud_adcdat;
+//assign debug[2:0] = main_state_r;
+//assign debug = mem_ptr_type_r;
+//assign init_finish = 1
 
 always_comb begin
 	main_state_w = main_state_r;
 	debug_w = debug_r;
 	clk_w = clk_r;
+	mem_ptr_type_w = mem_ptr_type_r;
 	case(main_state_r)
 		S_INIT: begin
-			if(!rst_n)  main_state_w = S_INIT_WAIT;
-			else main_state_w =S_INIT;
-		end
-		S_INIT_WAIT:begin
 			if(init_finish) main_state_w = S_IDLE;
 		end
 		S_IDLE: begin
 			if(i_sw[0] == 1 && i_sw[1] == 1 && i_sw[2] == 0) begin
 				main_state_w = S_RECORD;
+				mem_ptr_type_w = PTR_WRITE;
 			end
 			else if(i_sw[0] == 1 && i_sw[1] == 0 && i_sw[2] == 1) begin
 				main_state_w = S_PLAY;
+				mem_ptr_type_w = PTR_READ;
 			end
 		end
 		S_RECORD:begin
@@ -55,9 +65,11 @@ always_comb begin
 			end
 			else if(i_sw[0] == 0 && i_sw[1] == 1 && i_sw[2] == 0)begin
 				main_state_w = S_RECORD_PAUSE;
+				mem_ptr_type_w = PTR_DUMMY;
 			end
 			else begin
 				main_state_w = S_IDLE;
+				mem_ptr_type_w = PTR_DUMMY;
 			end
 		end
 		S_PLAY:begin
@@ -66,9 +78,11 @@ always_comb begin
 			end
 			else if(i_sw[0] == 0 && i_sw[1] == 0 && i_sw[2] == 1)begin
 				main_state_w = S_PLAY_PAUSE;
+				mem_ptr_type_w = PTR_DUMMY;
 			end
 			else begin
 				main_state_w = S_IDLE;
+				mem_ptr_type_w = PTR_DUMMY;
 			end
 		end
 		S_RECORD_PAUSE:begin
@@ -77,6 +91,7 @@ always_comb begin
 			end
 			else if(i_sw[0] == 1 && i_sw[1] == 1 && i_sw[2] == 0) begin
 				main_state_w = S_RECORD;
+				mem_ptr_type_w = PTR_WRITE;
 			end
 			else begin
 				main_state_w = S_IDLE;
@@ -88,6 +103,7 @@ always_comb begin
 			end
 			else if(i_sw[0] == 1 && i_sw[1] == 0 && i_sw[2] == 1) begin
 				main_state_w = S_PLAY;
+				mem_ptr_type_w = PTR_READ;
 			end
 			else begin
 				main_state_w = S_IDLE;
@@ -95,9 +111,11 @@ always_comb begin
 		end
 	endcase
 end
-always_ff @(posedge i_clk or negedge i_rst_n) begin
+always_ff @(posedge i_clk_12m or negedge i_rst_n) begin
 	if (!i_rst_n) begin
 		main_state_r <= S_INIT;
+		mem_ptr_type_r <= PTR_DUMMY;
+		rst_ptr <= 0;
 		clk_r <= 0;
 		debug_r <= 0;
 	end
@@ -105,19 +123,20 @@ always_ff @(posedge i_clk or negedge i_rst_n) begin
 		main_state_r <= main_state_w;
 		debug_r <= debug_w;
 		clk_r <= clk_w;
+		mem_ptr_type_r <= mem_ptr_type_w;
 	end
 end
 	SetCodec init(
-		.i_clk(clk_100k),
-		.i_rst_n(rst_n),
-		.o_sclk(I2C_SCLK),
-		.io_sdat(I2C_SDAT),
+		.i_clk(i_clk_100k),
+		.i_rst_n(i_rst_n),
+		.o_sclk(o_sclk),
+		.io_sdat(io_sdat),
 		.o_init_finish(init_finish)
+		
 	);
-	/*
 	SRamMgr memory(
-		.i_clk(i_clk),
-		.i_rst(i_rst),
+		.i_clk(i_clk_100k),
+		.i_rst_n(i_rst_n),
 		.i_rst_ptr(rst_ptr),
 		.i_ptr_type(mem_ptr_type_r),
 		.i_bePtrMove(i_sw[0]),
@@ -131,7 +150,9 @@ end
 		.o_sram_lb(o_sram_lb),
 		.o_sram_ub(o_sram_ub),
 		.o_sram_addr(o_sram_addr)
+		//.debug(debug[31:3])
 	);
+	/*
 	inout_port16 io(
 		.i_oe(oe_r),
 		.io_port(io_sram_dq),
