@@ -3,13 +3,16 @@ module SRamMgr(
 	input i_rst_n,
 	//input i_rst_ptr,
 	input[1:0] i_ptr_type,
+	input i_rst_ptr,
 	input i_data_writein,
 	input i_bePtrMove,
 	input[2:0] i_speed,
 	input i_beSlow,
+	input i_beIncAddr,
 	output o_data_readout,
 	//input beRerverse,
 	inout[15:0] io_sram_dq,
+	input[3:0] i_sram_dq_loc,
 
 	output o_sram_oe,
 	output o_sram_we,
@@ -22,7 +25,7 @@ module SRamMgr(
 );
 
 logic[15:0] data;
-logic[2:0] addr_inc_r,addr_inc_w;
+logic[2:0] addr_inc;
 logic[19:0] addr_r,addr_w;
 
 localparam PTR_DUMMY=0;
@@ -36,6 +39,7 @@ localparam ADDR_LAST = 20'b1;
 assign o_sram_addr = addr_r;
 assign io_sram_dq = data;
 assign ptr_type = i_bePtrMove?i_ptr_type:PTR_DUMMY
+assign addr_inc = i_beIncAddr?(i_speed):0
 assign oe = (ptr_type==PTR_READ)?1:0
 
 
@@ -56,7 +60,7 @@ Task Record;
 		o_sram_oe = 1'bz;
 		o_sram_lb = 0;
 		o_sram_ub = 0;
-		io_sram_dq = i_data_writein;
+		io_sram_dq[i_sram_dq_loc] = i_data_writein;
 	end
 endtask
 
@@ -73,33 +77,36 @@ endtask
 
 inout_port io_sram(
 	.i_oe(oe),
-	.io(io_sram_dq),
+	.io(io_sram_dq[i_sram_dq_loc]),
 	.i_o(o_data_readout)
 );
 
 
 always_comb begin
-	
-	//if(i_rst_ptr)begin
-		//addr_w = ADDR_FIRST;
-	//end
+	if(i_rst_ptr)begin
+		DoNoting();
+		addr_w = ADDR_FIRST;
+	end
+	addr_w = addr_r;
 	case(ptr_type)
 		PTR_DUMMY:begin
 			DoNoting();
 		end
 		PTR_WRITE:begin
-			if((addr_r + addr_inc_r) > ADDR_LAST)begin
+			if((addr_r + addr_inc) > ADDR_LAST)begin
 				DoNoting();
 			end
 			else begin
+				addr_w = addr_r + addr_inc;
 				Record();
 			end
 		end
 		PTR_READ:begin
-			if((addr_r + addr_inc_r > ADDR_LAST)) begin
-				addr_r = 
+			if((addr_r + addr_inc > ADDR_LAST)) begin
+				addr_w = ADDR_FIRST;
 			end
 			else begin
+				addr_w = addr_r + addr_inc;
 				Play();
 			end
 		end
