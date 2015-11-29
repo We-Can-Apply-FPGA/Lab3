@@ -135,165 +135,168 @@ module DE2_115(
 	output [16:0] HSMC_TX_D_P,
 	inout [6:0] EX_IO
 );
+`include "define.sv"
+logic clk_12m, clk_100k, rst_n;
+logic [17:0] sw;
+logic [3:0] key, ptr_action, mem_action;
+logic [31:0] cur_time;
+logic [7:0] ones;
+logic [7:0] tens;
+logic [31:0] debug;
 
-	logic clk_12m, clk_100k, rst_n;
-	logic [17:0] sw;
-    logic [3:0] key;
-	logic [31:0] cur_time;
-	logic [7:0] ones;
-	logic [7:0] tens;
-	logic [4:0] one;
-	logic [4:0] ten;
-	logic [31:0] debug;
-	assign debug = cur_time + (10000*ten) + (1000*one);
-	
-	
-	assign AUD_XCK = clk_12m;
-	
-	Main m0(
-		.i_aud_bclk(AUD_BCLK),
-		.i_clk_100k(clk_100k),
-		.i_rst_n(rst_n),
-        .i_key(key[3:0]),
-		.i_sw(sw[7:0]),
-		
-		.o_sclk(I2C_SCLK),
-		.io_sdat(I2C_SDAT),
+assign AUD_XCK = clk_12m;
 
-		.i_adclrck(AUD_ADCLRCK),
-		.i_adcdat(AUD_ADCDAT),
-		.i_daclrck(AUD_DACLRCK),
-		.o_dacdat(AUD_DACDAT),
-
-		.io_sram_dq(SRAM_DQ),
-		.o_sram_oe(SRAM_OE_N),
-		.o_sram_we(SRAM_WE_N),
-		.o_sram_ce(SRAM_CE_N),
-		.o_sram_lb(SRAM_LB_N),
-		.o_sram_ub(SRAM_UB_N),
-		.o_sram_addr(SRAM_ADDR),
-		
-		.o_curtime(cur_time)
-	);
+Main m0(
+	.i_bclk(AUD_BCLK),
+	.i_clk_100k(clk_100k),
+	.i_rst_n(rst_n),
+	.i_key(key[3:0]),
+	.i_sw(sw[7:0]),
 	
-<<<<<<< HEAD
-    Debounce deb_key0(
-        .i_in(KEY[0]),
-        .i_clk(AUD_BCLK),
-        .o_debounced(key[0])
-    );
-    Debounce deb_key1(
-        .i_in(KEY[1]),
-        .i_clk(AUD_BCLK),
-        .o_debounced(key[1])
-    );
-    Debounce deb_key2(
-        .i_in(KEY[2]),
-        .i_clk(AUD_BCLK),
-        .o_debounced(key[2])
-    );
-    Debounce deb_key3(
-        .i_in(KEY[3]),
-        .i_clk(AUD_BCLK),
-        .o_debounced(key[3])
-    );
+	.o_sclk(I2C_SCLK),
+	.io_sdat(I2C_SDAT),
 
-=======
-	
-	
->>>>>>> sssram
-	Debounce deb_rst(
-		.i_in(SW[17]),
-        .i_clk(AUD_BCLK),
-		.o_debounced(rst_n)
-	);
-	Debounce deb_sw0(
-		.i_in(SW[0]),
-        .i_clk(AUD_BCLK),
-		.o_debounced(sw[0])
-	);
-	Debounce deb_sw1(
-		.i_in(SW[1]),
-        .i_clk(AUD_BCLK),
-		.o_debounced(sw[1])
-	);
-	Debounce deb_sw2(
-		.i_in(SW[2]),
-        .i_clk(AUD_BCLK),
-		.o_debounced(sw[2])
-	);
-	Debounce deb_sw3(
-		.i_in(SW[3]),
-        .i_clk(AUD_BCLK),
-		.o_debounced(sw[3])
-	);
-	Debounce deb_sw4(
-		.i_in(SW[4]),
-        .i_clk(AUD_BCLK),
-		.o_debounced(sw[4])
-	);
-	Debounce deb_sw5(
-		.i_in(SW[5]),
-        .i_clk(AUD_BCLK),
-		.o_debounced(sw[5])
-	);
-	Debounce deb_sw6(
-		.i_in(SW[6]),
-        .i_clk(AUD_BCLK),
-		.o_debounced(sw[6])
-	);
-	Debounce deb_sw7(
-		.i_in(SW[7]),
-        .i_clk(AUD_BCLK),
-		.o_debounced(sw[7])
-	);
-	lab3 qsys(
-		.clk_clk(CLOCK_50),
-		.id100k_clk(clk_100k),
-		.id12m_clk(clk_12m),
-		.reset_reset_n(rst_n)
-	);
-	SevenHexDecoder seven_dec0(
-		.i_hex(debug),
-		.o_seven_1(HEX0),
-		.o_seven_2(HEX1),
-		.o_seven_3(HEX2),
-		.o_seven_4(HEX3),
-		.o_seven_5(HEX4),
-		.o_seven_6(HEX5),
-		.o_seven_7(HEX6),
-		.o_seven_8(HEX7)
-	);
+	.i_adclrck(AUD_ADCLRCK),
+	.i_adcdat(AUD_ADCDAT),
+	.i_daclrck(AUD_DACLRCK),
+	.o_dacdat(AUD_DACDAT),
 
-	logic [7:0] p[31:0];
-	wire DLY_RST;
-	assign LCD_ON = 1'b1;
-	assign LCD_BLON = 1'b1;
-	assign  {p[0],p[1],p[2]} = "00:";
-	assign  p[3] = tens;
-	assign  p[4] = ones;
-	//assign {p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],p[12],p[13],p[14],p[15]}           = "we are DCLAB Q_Q";
-	assign {p[16],p[17],p[18],p[19],p[20],p[21],p[22],p[23],p[24],p[25],p[26],p[27],p[28],p[29],p[30],p[31]} = "Coooooooooooooon";
-	Reset_Delay r0(
-		.i_clk(CLOCK_50),
-		.o_rst(DLY_RST)
-	);
-	Num2Str ns(
-		.i_num(cur_time),
-		.o_tens(tens),
-		.o_ones(ones),
-		.o_t(ten),
-		.o_o(one)
-	);
-	LCD_TEST lcd0(
-		//    Host Side
-		.i_clk(CLOCK_50),
-		.i_RST_N(DLY_RST),
-		.i_p(p),
-      //    LCD Side
-      .LCD_DATA(LCD_DATA),
-      .LCD_RW(LCD_RW),
-      .LCD_EN(LCD_EN),
-      .LCD_RS(LCD_RS)
-	);
+	.io_sram_dq(SRAM_DQ),
+	.o_sram_oe(SRAM_OE_N),
+	.o_sram_we(SRAM_WE_N),
+	.o_sram_ce(SRAM_CE_N),
+	.o_sram_lb(SRAM_LB_N),
+	.o_sram_ub(SRAM_UB_N),
+	.o_sram_addr(SRAM_ADDR),
+	
+	.o_curtime(cur_time),
+	.o_ptr_action(ptr_action),
+	.o_mem_action(mem_action),
+	.debug(debug)
+);
+
+Debounce deb_key0(
+	.i_in(KEY[0]),
+	.i_clk(AUD_BCLK),
+	.o_debounced(key[0])
+);
+Debounce deb_key1(
+	.i_in(KEY[1]),
+	.i_clk(AUD_BCLK),
+	.o_debounced(key[1])
+);
+Debounce deb_key2(
+	.i_in(KEY[2]),
+	.i_clk(AUD_BCLK),
+	.o_debounced(key[2])
+);
+Debounce deb_key3(
+	.i_in(KEY[3]),
+	.i_clk(AUD_BCLK),
+	.o_debounced(key[3])
+);
+Debounce deb_rst(
+	.i_in(SW[17]),
+	.i_clk(AUD_BCLK),
+	.o_debounced(rst_n)
+);
+Debounce deb_sw0(
+	.i_in(SW[0]),
+	.i_clk(AUD_BCLK),
+	.o_debounced(sw[0])
+);
+Debounce deb_sw1(
+	.i_in(SW[1]),
+	.i_clk(AUD_BCLK),
+	.o_debounced(sw[1])
+);
+Debounce deb_sw2(
+	.i_in(SW[2]),
+	.i_clk(AUD_BCLK),
+	.o_debounced(sw[2])
+);
+Debounce deb_sw3(
+	.i_in(SW[3]),
+	.i_clk(AUD_BCLK),
+	.o_debounced(sw[3])
+);
+Debounce deb_sw4(
+	.i_in(SW[4]),
+	.i_clk(AUD_BCLK),
+	.o_debounced(sw[4])
+);
+Debounce deb_sw5(
+	.i_in(SW[5]),
+	.i_clk(AUD_BCLK),
+	.o_debounced(sw[5])
+);
+Debounce deb_sw6(
+	.i_in(SW[6]),
+	.i_clk(AUD_BCLK),
+	.o_debounced(sw[6])
+);
+Debounce deb_sw7(
+	.i_in(SW[7]),
+	.i_clk(AUD_BCLK),
+	.o_debounced(sw[7])
+);
+lab3 qsys(
+	.clk_clk(CLOCK_50),
+	.id100k_clk(clk_100k),
+	.id12m_clk(clk_12m),
+	.reset_reset_n(rst_n)
+);
+SevenHexDecoder seven_dec0(
+	.i_hex(debug),
+	.o_seven_1(HEX0),
+	.o_seven_2(HEX1),
+	.o_seven_3(HEX2),
+	.o_seven_4(HEX3),
+	.o_seven_5(HEX4),
+	.o_seven_6(HEX5),
+	.o_seven_7(HEX6),
+	.o_seven_8(HEX7)
+);
+
+logic [7:0] p[31:0];
+wire DLY_RST;
+assign LCD_ON = 1'b1;
+assign LCD_BLON = 1'b1;
+
+always_comb begin
+	{p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],p[12],p[13],p[14],p[15]}           = "                ";
+	{p[16],p[17],p[18],p[19],p[20],p[21],p[22],p[23],p[24],p[25],p[26],p[27],p[28],p[29],p[30],p[31]} = "                ";
+	{p[27],p[28],p[29]} = "00:";
+	p[30] = tens;
+	p[31] = ones;
+	case(ptr_action)
+		PTR_RESET: {p[0],p[1],p[2],p[3],p[4]} = " STOP";
+		PTR_PAUSE: {p[0],p[1],p[2],p[3],p[4]} = "PAUSE";
+		PTR_RIGHT: {p[0],p[1],p[2],p[3],p[4]} = ">>>  ";
+		PTR_LEFT:{p[0],p[1],p[2],p[3],p[4]} = "  <<<";
+		PTR_START:begin
+			if(mem_action == MEM_READ) {p[0],p[1],p[2],p[3],p[4]} = "PLAY ";
+			else {p[0],p[1],p[2],p[3],p[4]} = " REC ";
+		end
+	endcase
+end
+
+Reset_Delay r0(
+	.i_clk(CLOCK_50),
+	.o_rst(DLY_RST)
+);
+Num2Str ns(
+	.i_num(cur_time),
+	.o_tens(tens),
+	.o_ones(ones)
+);
+LCD_TEST lcd0(
+	.i_clk(CLOCK_50),
+	.i_RST_N(DLY_RST),
+	.i_p(p),
+	.LCD_DATA(LCD_DATA),
+	.LCD_RW(LCD_RW),
+	.LCD_EN(LCD_EN),
+	.LCD_RS(LCD_RS)
+);
 endmodule

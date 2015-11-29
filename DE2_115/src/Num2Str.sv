@@ -1,9 +1,7 @@
 module Num2Str(
 	input  [31:0] i_num,
 	output [7:0] o_tens,
-	output [7:0] o_ones,
-	output [4:0] o_t,
-	output [4:0] o_o
+	output [7:0] o_ones
 );
 
 logic [31:0] number;
@@ -15,8 +13,6 @@ logic [4:0] ones;
 assign number = i_num;
 assign o_ones = ones_char;
 assign o_tens = tens_char;
-assign o_t = tens;
-assign o_o = ones;
 
 logic [7:0] mapping [0:10];
 assign mapping[0]  = "0";

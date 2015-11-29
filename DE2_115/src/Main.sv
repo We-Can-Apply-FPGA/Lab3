@@ -1,10 +1,8 @@
-`include "define.sv"
-
 module Main(
 	input i_bclk,
 	input i_clk_100k,
 	input i_rst_n,
-    input [3:0] i_key,
+	input [3:0] i_key,
 	input [7:0] i_sw,
 	
 	output o_sclk,
@@ -23,9 +21,13 @@ module Main(
 	output o_sram_lb,
 	output o_sram_ub,
 
-	output [31:0] o_curtime
+	output [31:0] o_curtime,
+	output [3:0] o_ptr_action,
+	output [3:0] o_mem_action,
+	//output [2:0] o_speed,
+	output [31:0] debug
 );
-
+`include "define.sv"
 localparam S_INIT = 0;
 localparam S_LEFT = 1;
 localparam S_RIGHT = 2;
@@ -35,17 +37,17 @@ localparam M_MODIFY = 1;
 
 localparam CHANNEL_LENGTH = 16;
 
-logic mode;
 logic [2:0] state_r, state_w;
 logic [31:0] debug_r, debug_w;
 logic [15:0] data_r, data_w;
 logic [10:0] clk_r, clk_w;
-logic [1:0] ptr_action, mem_action;
+logic [3:0] speed;
 logic ptr_start, mem_start, ok_r, ok_w;
 logic init_finish;
+logic [15:0] o_data;
 
-assign mode = i_sw[2];
-assign debug = o_sram_addr / 320 + ptr_action * 100000 + mem_action * 10000;
+
+assign debug = speed + o_ptr_action *1000 + o_mem_action * 100;
 assign o_curtime = o_sram_addr / 32000 ;
 
 SetCodec init(
@@ -60,39 +62,43 @@ SRamMgr memory(
 	.i_clk(i_bclk),
 	.i_rst_n(i_rst_n),
 	
-    .i_start(i_sw[1])
+	.i_speed(speed),
+	.i_interpolate(i_sw[3]),
+	.i_repeat(i_sw[1]),
 	.i_ptr_start(ptr_start),
 	.i_mem_start(mem_start),
-	.i_ptr_action(ptr_action),
-	.i_mem_action(mem_action),
+	.i_ptr_action(o_ptr_action),
+	.i_mem_action(o_mem_action),
 	.i_data(data_r),
 	
 	.o_sram_addr(o_sram_addr),
 	.io_sram_dq(io_sram_dq),
+	.o_data_read_out(o_data),
 	.o_sram_oe(o_sram_oe),
 	.o_sram_we(o_sram_we),
 	.o_sram_ce(o_sram_ce),
 	.o_sram_lb(o_sram_lb),
-	.o_sram_ub(o_sram_ub),
+	.o_sram_ub(o_sram_ub)
 );
 
 Controller control(
-    i_clk(i_bclk),
-    i_rst_n(i_rst_n),
+    .i_clk(i_bclk),
+    .i_rst_n(i_rst_n),
 
-    i_key(i_key),
-    i_sw(i_sw[0]),
-    i_mode(mode),
-    o_ptr_action(ptr_action),
-    o_mem_action(mem_action)
+    .i_key(i_key),
+    .i_rw(i_sw[0]),
+    .i_mode(i_sw[2]),
+	.o_speed(speed),
+    .o_ptr_action(o_ptr_action),
+    .o_mem_action(o_mem_action)
 );
 
 task audio;
 begin
 	if (clk_r > 0) begin
-		case(mem_action)
+		case(o_mem_action)
 			MEM_READ: begin
-				o_dacdat = io_sram_dq[clk_r - 1];
+				o_dacdat = o_data[clk_r - 1];
 				mem_start = 1;
 			end
 			MEM_WRITE: begin
@@ -105,7 +111,7 @@ begin
 		clk_w = clk_r - 1;
 	end
 	else begin
-		if (!ok_r && mem_action == MEM_WRITE) begin
+		if (!ok_r && o_mem_action == MEM_WRITE) begin
 			mem_start = 1;
 			ok_w = 1;
 		end
@@ -167,4 +173,5 @@ always_ff @(negedge i_bclk or negedge i_rst_n) begin
 		data_r <= data_w;
 	end
 end
+endmodule
 
