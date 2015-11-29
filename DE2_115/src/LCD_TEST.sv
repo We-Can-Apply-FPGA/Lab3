@@ -64,6 +64,9 @@ module LCD_TEST (
 					end
 				endcase
 			end
+			else begin
+				LUT_INDEX = LCD_INTIAL + 4;
+			end
 		end
 	end
 
