@@ -1,7 +1,7 @@
 `include "define.sv"
 
 module Main(
-	input i__bclk,
+	input i_bclk,
 	input i_clk_100k,
 	input i_rst_n,
     input [3:0] i_key,
@@ -30,9 +30,13 @@ localparam S_INIT = 0;
 localparam S_LEFT = 1;
 localparam S_RIGHT = 2;
 
+localparam M_NORMAL = 0;
+localparam M_MODIFY = 1;
+
 localparam CHANNEL_LENGTH = 16;
 
-logic[2:0] state_r, state_w;
+logic mode;
+logic [2:0] state_r, state_w;
 logic [31:0] debug_r, debug_w;
 logic [15:0] data_r, data_w;
 logic [10:0] clk_r, clk_w;
@@ -40,6 +44,7 @@ logic [1:0] ptr_action, mem_action;
 logic ptr_start, mem_start, ok_r, ok_w;
 logic init_finish;
 
+assign mode = i_sw[2];
 assign debug = o_sram_addr / 320 + ptr_action * 100000 + mem_action * 10000;
 
 SetCodec init(
@@ -54,6 +59,7 @@ SRamMgr memory(
 	.i_clk(i_bclk),
 	.i_rst_n(i_rst_n),
 	
+    .i_start(i_sw[1])
 	.i_ptr_start(ptr_start),
 	.i_mem_start(mem_start),
 	.i_ptr_action(ptr_action),
@@ -72,8 +78,10 @@ SRamMgr memory(
 Controller control(
     i_clk(i_bclk),
     i_rst_n(i_rst_n),
+
     i_key(i_key),
-    i_sw(i_sw),
+    i_sw(i_sw[0]),
+    i_mode(mode),
     o_ptr_action(ptr_action),
     o_mem_action(mem_action)
 );
@@ -113,7 +121,6 @@ always_comb begin
 	data_w = data_r;
 	mem_start = 0;
 	ptr_start = 0;
-    ptr_action_w = ptr_action_r;
 	case(state_r)
 		S_INIT: begin
 			if (init_finish) begin

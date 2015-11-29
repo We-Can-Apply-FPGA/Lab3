@@ -4,6 +4,7 @@ module SRamMgr(
 	input i_clk,
 	input i_rst_n,
 	
+    input i_repeat,
 	input i_ptr_start,
 	input i_mem_start,
 	input [1:0] i_ptr_action,
@@ -19,15 +20,6 @@ module SRamMgr(
 	output o_sram_lb,
 	output o_sram_ub,
 );
-
-localparam PTR_PAUSE = 0;
-localparam PTR_START = 1;
-localparam PTR_RESET = 2;
-
-localparam MEM_ECHO = 0;
-localparam MEM_WRITE = 1;
-localparam MEM_READ = 2;
-
 
 logic[2:0] ptr_inc_r, ptr_inc_w;
 logic[19:0] addr_r, addr_w, last_r, last_w;
@@ -47,18 +39,35 @@ always_comb begin
 	o_sram_ub = 1'bz;
 	if (i_ptr_start) begin
 		case(i_ptr_action)
+			PTR_RESET: begin
+				addr_w = 0;
+			end
 			PTR_PAUSE: begin
 			end
 			PTR_START: begin
 				addr_w = addr_r + ptr_inc_r;
 				if (i_mem_action == MEM_WRITE) last_w = addr_r + ptr_inc_r;
 				else begin
-					if (addr_r + ptr_inc_r > last_r) addr_w = 0;
+                    if (addr_w > last_r || addr_w < addr_r) begin
+                        if (i_repeat) addr_w = 0;
+                        else addr_w = '1;
+                    end
 				end
 			end
-			PTR_RESET: begin
-				addr_w = 0;
-			end
+            PTR_RIGHT: begin
+                addr_w = addr_r + ptr_inc_r * 2;
+                if (addr_w < addr_r) begin
+                    if (i_repeat) addr_w = 0;
+                    else addr_w = '1;
+                end
+            end
+            PTR_LEFT: begin
+                addr_w = addr_r - ptr_inc_r * 2;
+                if (addr_w > addr_r) begin
+                    if (i_repeat) addr_w = '1;
+                    else addr_w = 0;
+                end
+            end
 		endcase
 	end
 	if (i_mem_start) begin
