@@ -30,7 +30,8 @@ module SevenHexDecoder(
 	logic [31:0] now1, now2, now3, now4, now5, now6, now7, now8;
 	
 	always_comb begin
-		now1 = i_hex[2:0];
+		//now1 = i_hex[2:0];
+		now1 = i_hex;
 		case(now1 % 10)
 			0: o_seven_1 = D0;
 			1: o_seven_1 = D1;
@@ -44,7 +45,8 @@ module SevenHexDecoder(
 			9: o_seven_1 = D9;
 			default: o_seven_1 = DX;
 		endcase
-		now2 = i_hex[3];
+		//now2 = i_hex[3];
+		now2 = now1/10;
 		case(now2 % 10)
 			0: o_seven_2 = D0;
 			1: o_seven_2 = D1;
@@ -58,8 +60,8 @@ module SevenHexDecoder(
 			9: o_seven_2 = D9;
 			default: o_seven_2 = DX;
 		endcase
-		now3 = i_hex[4];
-		//now3 = now2 / 10;
+		//now3 = i_hex[4];
+		now3 = now2 / 10;
 		case(now3 % 10)
 			0: o_seven_3 = D0;
 			1: o_seven_3 = D1;
@@ -73,8 +75,8 @@ module SevenHexDecoder(
 			9: o_seven_3 = D9;
 			default: o_seven_3 = DX;
 		endcase
-		now4 = i_hex[5];
-		//now4 = now3 / 10;
+		//now4 = i_hex[5];
+		now4 = now3 / 10;
 		case(now4 % 10)
 			0: o_seven_4 = D0;
 			1: o_seven_4 = D1;
@@ -88,8 +90,8 @@ module SevenHexDecoder(
 			9: o_seven_4 = D9;
 			default: o_seven_4 = DX;
 		endcase
-		now5 = i_hex[6];
-		//now5 = now4 / 10;
+		//now5 = i_hex[6];
+		now5 = now4 / 10;
 		case(now5 % 10)
 			0: o_seven_5 = D0;
 			1: o_seven_5 = D1;
@@ -103,8 +105,8 @@ module SevenHexDecoder(
 			9: o_seven_5 = D9;
 			default: o_seven_5 = DX;
 		endcase
-		now6 = i_hex[7];
-		//now6 = now5 / 10;
+		//now6 = i_hex[7];
+		now6 = now5 / 10;
 		case(now6 % 10)
 			0: o_seven_6 = D0;
 			1: o_seven_6 = D1;
@@ -118,8 +120,8 @@ module SevenHexDecoder(
 			9: o_seven_6 = D9;
 			default: o_seven_6 = DX;
 		endcase
-		now7 = i_hex[8];
-		//now7 = now6 / 10;
+		//now7 = i_hex[8];
+		now7 = now6 / 10;
 		case(now7 % 10)
 			0: o_seven_7 = D0;
 			1: o_seven_7 = D1;
@@ -133,8 +135,8 @@ module SevenHexDecoder(
 			9: o_seven_7 = D9;
 			default: o_seven_7 = DX;
 		endcase
-		now8 = i_hex[9];
-		//now8 = now7 / 10;
+		//now8 = i_hex[9];
+		now8 = now7 / 10;
 		case(now8 % 10)
 			0: o_seven_8 = D0;
 			1: o_seven_8 = D1;

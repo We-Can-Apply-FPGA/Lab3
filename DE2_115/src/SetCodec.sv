@@ -3,7 +3,8 @@ module SetCodec(
 	input i_rst_n,
 	output o_sclk,
 	inout io_sdat,
-	output o_init_finish
+	output o_init_finish,
+	output [31:0] debug
 );
 
 logic [23:0] init_data[5:0];

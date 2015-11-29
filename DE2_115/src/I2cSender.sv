@@ -6,7 +6,7 @@ module I2cSender #(parameter BYTE=3) (
 	output o_finished,
 	output o_sclk,
 	inout io_sdat,
-	output debug
+	output [31:0] debug
 );
 
 localparam S_IDLE = 0;
@@ -25,12 +25,8 @@ logic sdat_r, sdat_w;
 
 assign o_finished = (state_r == 0) && !i_start;
 assign o_sclk = (counter_r == 2);
-
-inout_port io(
-	.i_oe(oe_r),
-	.io(io_sdat),
-	.i(sdat_r)
-);
+assign io_sdat = oe_r?sdat_r:1'bz;
+assign debug = debug_r;
 
 always_comb begin
 	state_w = state_r;
@@ -75,13 +71,11 @@ always_comb begin
 			end
 		end
 		S_TRANS: begin
+			if (!oe_r && counter_r == 2 && !bit_counter_r && !io_sdat) debug_w = debug_r + 1;
 			if (counter_r == 1) begin
 				if (!bit_counter_r) begin
-					if (oe_w) begin
-						oe_w = 0;
-					end
+					if (oe_w) oe_w = 0;
 					else begin
-						if (io_sdat == 0) debug_w = debug_r + 1;
 						oe_w = 1;
 						if (!byte_counter_r) begin
 							state_w = S_END;
@@ -136,8 +130,4 @@ always_ff @(posedge i_clk or negedge i_rst_n) begin
 		debug_r <= debug_w;
 	end
 end
-endmodule
-
-module inout_port(input i_oe, inout io, input i);
-assign io = i_oe? i: 1'bz;
 endmodule

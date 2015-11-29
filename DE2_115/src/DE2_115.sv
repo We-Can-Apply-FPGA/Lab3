@@ -136,24 +136,63 @@ module DE2_115(
 	inout [6:0] EX_IO
 );
 
-	logic [7:0] p[31:0];
-	logic clk_12m, clk_100k;
-	logic [31:0] debug;
-	logic rst, rst_n;
+	logic clk_12m, clk_100k, rst_n;
+	logic [31:0] debug, mydebug;
 	logic [17:0] sw;
 	
-	wire DLY_RST;
-	assign LCD_ON = 1'b1;
-	assign LCD_BLON = 1'b1;
-	assign {p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],p[12],p[13],p[14],p[15]}           = "we are DCLAB Q_Q";
-	assign {p[16],p[17],p[18],p[19],p[20],p[21],p[22],p[23],p[24],p[25],p[26],p[27],p[28],p[29],p[30],p[31]} = "Coooooooooooooon";
 	
 	assign AUD_XCK = clk_12m;
-	//assign debug = AUD_ADCDAT*10 + AUD_ADCLRCK;
-	//assign debug[7:5] = sw[2:0];
-	//assign debug[4] = rst;
-	//assign debug[2:0] = SW[2:0];
-	//assign debug[3] = 1'b1;
+	assign debug = mydebug;
+	
+	Main m0(
+		.i_aud_bclk(AUD_BCLK),
+		.i_clk_100k(clk_100k),
+		.i_rst_n(rst_n),
+		.i_sw(sw[7:0]),
+		
+		.o_sclk(I2C_SCLK),
+		.io_sdat(I2C_SDAT),
+
+		.i_adclrck(AUD_ADCLRCK),
+		.i_adcdat(AUD_ADCDAT),
+		.i_daclrck(AUD_DACLRCK),
+		.o_dacdat(AUD_DACDAT),
+
+		.io_sram_dq(SRAM_DQ),
+		.o_sram_oe(SRAM_OE_N),
+		.o_sram_we(SRAM_WE_N),
+		.o_sram_ce(SRAM_CE_N),
+		.o_sram_lb(SRAM_LB_N),
+		.o_sram_ub(SRAM_UB_N),
+		.o_sram_addr(SRAM_ADDR),
+		
+		.debug(mydebug)
+	);
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	Debounce deb_rst(
 		.i_in(KEY[0]),
@@ -200,6 +239,12 @@ module DE2_115(
 		.i_clk(CLOCK_50),
 		.o_debounced(sw[7])
 	);
+	lab3 qsys(
+		.clk_clk(CLOCK_50),
+		.id100k_clk(clk_100k),
+		.id12m_clk(clk_12m),
+		.reset_reset_n(rst_n)
+	);
 	SevenHexDecoder seven_dec0(
 		.i_hex(debug),
 		.o_seven_1(HEX0),
@@ -211,6 +256,12 @@ module DE2_115(
 		.o_seven_7(HEX6),
 		.o_seven_8(HEX7)
 	);
+	logic [7:0] p[31:0];
+	wire DLY_RST;
+	assign LCD_ON = 1'b1;
+	assign LCD_BLON = 1'b1;
+	assign {p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],p[12],p[13],p[14],p[15]}           = "we are DCLAB Q_Q";
+	assign {p[16],p[17],p[18],p[19],p[20],p[21],p[22],p[23],p[24],p[25],p[26],p[27],p[28],p[29],p[30],p[31]} = "Coooooooooooooon";
 	Reset_Delay r0(
 		.i_clk(CLOCK_50),
 		.o_rst(DLY_RST)
@@ -225,41 +276,5 @@ module DE2_115(
       .LCD_RW(LCD_RW),
       .LCD_EN(LCD_EN),
       .LCD_RS(LCD_RS)
-	);
-	Main m0(
-		.i_clk_12m(clk_12m),
-		.i_clk_100k(clk_100k),
-		.i_rst_n(rst_n),
-		
-		.o_sclk(I2C_SCLK),
-		.io_sdat(I2C_SDAT),
-
-		.i_aud_adclrck(AUD_ADCLRCK),
-		.i_aud_adcdat(AUD_ADCDAT),
-		.i_aud_daclrck(AUD_DACLRCK),
-		.o_aud_dacdat(AUD_DACDAT),
-		.i_aud_bclk(AUD_BCLK),
-
-		.i_sw(sw[7:0]),
-		
-		.debug(debug)
-		
-		/*
-		.io_sram_dq(SRAM_DQ),
-		.o_sram_oe(SRAM_OE_N),
-		.o_sram_we(SRAM_WE_N),
-		.o_sram_ce(SRAM_CE_N),
-		.o_sram_lb(SRAM_LB_N),
-		.o_sram_ub(SRAM_UB_N),
-		.o_sram_addr(SRAM_ADDR)
-		*/
-	);
-	//SetCodec init(
-	//);
-	lab3 qsys(
-		.clk_clk(CLOCK_50),
-		.id100k_clk(clk_100k),
-		.id12m_clk(clk_12m),
-		.reset_reset_n(rst_n)
 	);
 endmodule
