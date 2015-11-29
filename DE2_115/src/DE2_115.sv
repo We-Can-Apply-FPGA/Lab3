@@ -139,6 +139,7 @@ module DE2_115(
 	logic clk_12m, clk_100k, rst_n;
 	logic [31:0] debug, mydebug;
 	logic [17:0] sw;
+    logic [3:0] key;
 	
 	
 	assign AUD_XCK = clk_12m;
@@ -148,6 +149,7 @@ module DE2_115(
 		.i_aud_bclk(AUD_BCLK),
 		.i_clk_100k(clk_100k),
 		.i_rst_n(rst_n),
+        .i_key(key[3:0]),
 		.i_sw(sw[7:0]),
 		
 		.o_sclk(I2C_SCLK),
@@ -169,74 +171,70 @@ module DE2_115(
 		.debug(mydebug)
 	);
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+    Debounce deb_key0(
+        .i_in(KEY[0]),
+        .i_clk(AUD_BCLK),
+        .o_debounced(key[0])
+    );
+    Debounce deb_key1(
+        .i_in(KEY[1]),
+        .i_clk(AUD_BCLK),
+        .o_debounced(key[1])
+    );
+    Debounce deb_key2(
+        .i_in(KEY[2]),
+        .i_clk(AUD_BCLK),
+        .o_debounced(key[2])
+    );
+    Debounce deb_key3(
+        .i_in(KEY[3]),
+        .i_clk(AUD_BCLK),
+        .o_debounced(key[3])
+    );
+
 	Debounce deb_rst(
-		.i_in(KEY[0]),
-		.i_clk(CLOCK_50),
+		.i_in(SW[17]),
+        .i_clk(AUD_BCLK),
 		.o_debounced(rst_n)
 	);
 	Debounce deb_sw0(
 		.i_in(SW[0]),
-		.i_clk(CLOCK_50),
+        .i_clk(AUD_BCLK),
 		.o_debounced(sw[0])
 	);
 	Debounce deb_sw1(
 		.i_in(SW[1]),
-		.i_clk(CLOCK_50),
+        .i_clk(AUD_BCLK),
 		.o_debounced(sw[1])
 	);
 	Debounce deb_sw2(
 		.i_in(SW[2]),
-		.i_clk(CLOCK_50),
+        .i_clk(AUD_BCLK),
 		.o_debounced(sw[2])
 	);
 	Debounce deb_sw3(
 		.i_in(SW[3]),
-		.i_clk(CLOCK_50),
+        .i_clk(AUD_BCLK),
 		.o_debounced(sw[3])
 	);
 	Debounce deb_sw4(
 		.i_in(SW[4]),
-		.i_clk(CLOCK_50),
+        .i_clk(AUD_BCLK),
 		.o_debounced(sw[4])
 	);
 	Debounce deb_sw5(
 		.i_in(SW[5]),
-		.i_clk(CLOCK_50),
+        .i_clk(AUD_BCLK),
 		.o_debounced(sw[5])
 	);
 	Debounce deb_sw6(
 		.i_in(SW[6]),
-		.i_clk(CLOCK_50),
+        .i_clk(AUD_BCLK),
 		.o_debounced(sw[6])
 	);
 	Debounce deb_sw7(
 		.i_in(SW[7]),
-		.i_clk(CLOCK_50),
+        .i_clk(AUD_BCLK),
 		.o_debounced(sw[7])
 	);
 	lab3 qsys(
@@ -256,6 +254,7 @@ module DE2_115(
 		.o_seven_7(HEX6),
 		.o_seven_8(HEX7)
 	);
+
 	logic [7:0] p[31:0];
 	wire DLY_RST;
 	assign LCD_ON = 1'b1;

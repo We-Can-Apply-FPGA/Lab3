@@ -1,7 +1,10 @@
+`include "define.sv"
+
 module Main(
-	input i_aud_bclk,
+	input i__bclk,
 	input i_clk_100k,
 	input i_rst_n,
+    input [3:0] i_key,
 	input [7:0] i_sw,
 	
 	output o_sclk,
@@ -27,14 +30,6 @@ localparam S_INIT = 0;
 localparam S_LEFT = 1;
 localparam S_RIGHT = 2;
 
-localparam PTR_PAUSE = 0;
-localparam PTR_START = 1;
-localparam PTR_RESET = 2;
-
-localparam MEM_ECHO = 0;
-localparam MEM_WRITE = 1;
-localparam MEM_READ = 2;
-
 localparam CHANNEL_LENGTH = 16;
 
 logic[2:0] state_r, state_w;
@@ -44,13 +39,6 @@ logic [10:0] clk_r, clk_w;
 logic [1:0] ptr_action, mem_action;
 logic ptr_start, mem_start, ok_r, ok_w;
 logic init_finish;
-
-//assign o_dacdat = i_adcdat;
-assign ptr_action = i_sw[0] + ((i_sw[2:0] == 0) << 1);
-assign mem_action = (i_sw[2] << 1) + i_sw[1];
-//assign mem_action = (((i_sw[2] << 1) + i_sw[1]) == 3)?MEM_ECHO : ((i_sw[2] << 1) + i_sw[1]);
-//assign ptr_action = (i_sw[1] ^ i_sw[2])?((i_sw[1] ^ i_sw[2])+i_sw[0]) : PTR_RESET;
-//assign mem_action = (i_sw[1] ^ i_sw[2])?(i_sw[2] + 1):MEM_ECHO;
 
 assign debug = o_sram_addr / 320 + ptr_action * 100000 + mem_action * 10000;
 
@@ -63,7 +51,7 @@ SetCodec init(
 );
 
 SRamMgr memory(
-	.i_clk(i_aud_bclk),
+	.i_clk(i_bclk),
 	.i_rst_n(i_rst_n),
 	
 	.i_ptr_start(ptr_start),
@@ -79,6 +67,15 @@ SRamMgr memory(
 	.o_sram_ce(o_sram_ce),
 	.o_sram_lb(o_sram_lb),
 	.o_sram_ub(o_sram_ub),
+);
+
+Controller control(
+    i_clk(i_bclk),
+    i_rst_n(i_rst_n),
+    i_key(i_key),
+    i_sw(i_sw),
+    o_ptr_action(ptr_action),
+    o_mem_action(mem_action)
 );
 
 task audio;
@@ -98,7 +95,7 @@ begin
 		endcase
 		clk_w = clk_r - 1;
 	end
-	else begin // full!
+	else begin
 		if (!ok_r && mem_action == MEM_WRITE) begin
 			mem_start = 1;
 			ok_w = 1;
@@ -116,7 +113,7 @@ always_comb begin
 	data_w = data_r;
 	mem_start = 0;
 	ptr_start = 0;
-	//adc dac clock will work simultaneously?
+    ptr_action_w = ptr_action_r;
 	case(state_r)
 		S_INIT: begin
 			if (init_finish) begin
@@ -149,17 +146,17 @@ always_comb begin
 	endcase
 end
 
-always_ff @(negedge i_rst_n or negedge i_aud_bclk) begin
+always_ff @(negedge i_bclk or negedge i_rst_n) begin
 	if (!i_rst_n) begin
 		state_r <= S_INIT;
 		data_r <= 0;
 		ok_r <= 0;
 	end
-	else if (!i_aud_bclk) begin
+	else if (!i_bclk) begin
 		state_r <= state_w;
 		clk_r <= clk_w;
 		ok_r <= ok_w;
 		data_r <= data_w;
 	end
 end
-endmodule
+

@@ -1,3 +1,5 @@
+`include "define.sv"
+
 module SRamMgr(
 	input i_clk,
 	input i_rst_n,
