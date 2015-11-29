@@ -39,6 +39,13 @@ module tb;
 		@(posedge clk)
 		sta <= 0;
 		@(posedge fin)
+
+		@(posedge clk)
+		@(posedge clk)
+		sta <= 1;
+		@(posedge clk)
+		sta <= 0;
+		@(posedge fin)
 		#(10*CLK)
 		$finish;
 	end

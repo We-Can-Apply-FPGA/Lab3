@@ -1,10 +1,12 @@
-module I2cSender #(parameter BYTE=1) (
+module I2cSender #(parameter BYTE=3) (
 	input i_start,
 	input [BYTE*8-1:0] i_dat,
 	input i_clk,
-	input i_rst, output o_finished,
+	input i_rst_n,
+	output o_finished,
 	output o_sclk,
-	inout o_sdat
+	inout io_sdat,
+	output [31:0] debug
 );
 
 localparam S_IDLE = 0;
@@ -16,20 +18,15 @@ logic [1:0] state_r, state_w;
 logic [4:0] byte_counter_r, byte_counter_w;
 logic [2:0] bit_counter_r, bit_counter_w;
 logic [1:0] counter_r, counter_w;
+logic [31:0] debug_w, debug_r;
 logic [BYTE*8-1:0] data_r, data_w;
 logic oe_r, oe_w;
 logic sdat_r, sdat_w;
-logic ack;
 
-assign o_finished = (state_r == 0);
+assign o_finished = (state_r == 0) && !i_start;
 assign o_sclk = (counter_r == 2);
-
-inout_port io(
-	.i_oe(oe_r),
-	.io_sda(o_sdat),
-	.o_i(ack),
-	.i_o(sdat_r)
-);
+assign io_sdat = oe_r?sdat_r:1'bz;
+assign debug = debug_r;
 
 always_comb begin
 	state_w = state_r;
@@ -39,6 +36,8 @@ always_comb begin
 	byte_counter_w = byte_counter_r;
 	bit_counter_w = bit_counter_r;
 	counter_w = counter_r;
+	
+	debug_w = debug_r;
 	if (state_r != S_IDLE) begin
 		case(counter_r)
 			2: begin
@@ -72,11 +71,10 @@ always_comb begin
 			end
 		end
 		S_TRANS: begin
+			if (!oe_r && counter_r == 2 && !bit_counter_r && !io_sdat) debug_w = debug_r + 1;
 			if (counter_r == 1) begin
 				if (!bit_counter_r) begin
-					if (oe_w) begin
-						oe_w = 0;
-					end
+					if (oe_w) oe_w = 0;
 					else begin
 						oe_w = 1;
 						if (!byte_counter_r) begin
@@ -108,15 +106,17 @@ always_comb begin
 	endcase
 end
 
-always_ff @(posedge i_clk or negedge i_rst) begin
-	if (!i_rst) begin
+always_ff @(posedge i_clk or negedge i_rst_n) begin
+	if (!i_rst_n) begin
 		state_r <= S_IDLE;
 		data_r <= 0;
-		oe_r = 0;
+		oe_r <= 1;
 		sdat_r <= 1;
 		byte_counter_r <= 0;
 		bit_counter_r <= 0;
 		counter_r <= 2;
+		
+		debug_r <= 0;
 	end
 	else begin
 		state_r <= state_w;
@@ -126,12 +126,8 @@ always_ff @(posedge i_clk or negedge i_rst) begin
 		byte_counter_r <= byte_counter_w;
 		bit_counter_r <= bit_counter_w;
 		counter_r <= counter_w;
+		
+		debug_r <= debug_w;
 	end
 end
-endmodule
-
-module inout_port(input i_oe, inout io_sda, output o_i, input i_o);
-logic i, o;
-assign io_sda = i_oe? i_o: 1'bz;
-assign o_i = i_oe? 1'bz: io_sda;
 endmodule
