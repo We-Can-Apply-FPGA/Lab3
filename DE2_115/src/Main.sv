@@ -27,7 +27,7 @@ localparam S_INIT = 0;
 localparam S_LEFT = 1;
 localparam S_RIGHT = 2;
 
-localparam PTR_STOP = 0;
+localparam PTR_PAUSE = 0;
 localparam PTR_START = 1;
 localparam PTR_RESET = 2;
 
@@ -35,19 +35,24 @@ localparam MEM_ECHO = 0;
 localparam MEM_WRITE = 1;
 localparam MEM_READ = 2;
 
+localparam CHANNEL_LENGTH = 16;
+
 logic[2:0] state_r, state_w;
 logic [31:0] debug_r, debug_w;
 logic [15:0] data_r, data_w;
 logic [10:0] clk_r, clk_w;
 logic [1:0] ptr_action, mem_action;
-logic start_r, start_w, ok_r, ok_w;
+logic ptr_start, mem_start, ok_r, ok_w;
 logic init_finish;
 
 //assign o_dacdat = i_adcdat;
-assign ptr_action = i_sw[0] + ((!i_sw[0] & !i_sw[1]) << 1);
+assign ptr_action = i_sw[0] + ((i_sw[2:0] == 0) << 1);
 assign mem_action = (i_sw[2] << 1) + i_sw[1];
+//assign mem_action = (((i_sw[2] << 1) + i_sw[1]) == 3)?MEM_ECHO : ((i_sw[2] << 1) + i_sw[1]);
+//assign ptr_action = (i_sw[1] ^ i_sw[2])?((i_sw[1] ^ i_sw[2])+i_sw[0]) : PTR_RESET;
+//assign mem_action = (i_sw[1] ^ i_sw[2])?(i_sw[2] + 1):MEM_ECHO;
 
-assign debug = o_sram_addr / 640;
+assign debug = o_sram_addr / 320 + ptr_action * 100000 + mem_action * 10000;
 
 SetCodec init(
 	.i_clk(i_clk_100k),
@@ -61,7 +66,8 @@ SRamMgr memory(
 	.i_clk(i_aud_bclk),
 	.i_rst_n(i_rst_n),
 	
-	.i_start(start_r),
+	.i_ptr_start(ptr_start),
+	.i_mem_start(mem_start),
 	.i_ptr_action(ptr_action),
 	.i_mem_action(mem_action),
 	.i_data(data_r),
@@ -77,26 +83,27 @@ SRamMgr memory(
 
 task audio;
 begin
-	if (clk_r < 16) begin
+	if (clk_r > 0) begin
 		case(mem_action)
 			MEM_READ: begin
-				o_dacdat = io_sram_dq;
+				o_dacdat = io_sram_dq[clk_r - 1];
+				mem_start = 1;
 			end
 			MEM_WRITE: begin
-				data_w = (data_r << 1) + io_sram_dq;
+				data_w = (data_r << 1) + i_adcdat;
 			end
 			MEM_ECHO: begin
 				o_dacdat = i_adcdat;
 			end
 		endcase
-		clk_w = clk_r + 1;
+		clk_w = clk_r - 1;
 	end
-	else begin
-		if (!ok_r) begin
-			start_w = 1;
+	else begin // full!
+		if (!ok_r && mem_action == MEM_WRITE) begin
+			mem_start = 1;
 			ok_w = 1;
 		end
-		else start_w = 0;
+		else mem_start = 0;
 	end
 end
 endtask
@@ -104,15 +111,16 @@ endtask
 always_comb begin
 	state_w = state_r;
 	clk_w = clk_r;
-	start_w = start_r;
 	ok_w = ok_r;
 	o_dacdat = 0;
 	data_w = data_r;
+	mem_start = 0;
+	ptr_start = 0;
+	//adc dac clock will work simultaneously?
 	case(state_r)
 		S_INIT: begin
-			debug_w = debug_r + 1;
 			if (init_finish) begin
-				clk_w = 0;
+				clk_w = CHANNEL_LENGTH;
 				ok_w = 0;
 				data_w = 0;
 				state_w = S_LEFT;
@@ -120,17 +128,20 @@ always_comb begin
 		end
 		S_LEFT: begin
 			if (i_adclrck) begin
-				clk_w = 0;
+				clk_w = CHANNEL_LENGTH;
 				ok_w = 0;
+				data_w = 0;
 				state_w = S_RIGHT;
 			end
 			audio();
+			
 		end
 		S_RIGHT: begin
 			if (!i_adclrck) begin
-				clk_w = 0;
+				clk_w = CHANNEL_LENGTH;
 				ok_w = 0;
 				data_w = 0;
+				ptr_start = 1;
 				state_w = S_LEFT;
 			end
 			audio();
@@ -141,14 +152,12 @@ end
 always_ff @(negedge i_rst_n or negedge i_aud_bclk) begin
 	if (!i_rst_n) begin
 		state_r <= S_INIT;
-		start_r <= 0;
 		data_r <= 0;
 		ok_r <= 0;
 	end
 	else if (!i_aud_bclk) begin
 		state_r <= state_w;
 		clk_r <= clk_w;
-		start_r <= start_w;
 		ok_r <= ok_w;
 		data_r <= data_w;
 	end
