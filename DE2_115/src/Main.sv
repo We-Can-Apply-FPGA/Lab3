@@ -23,7 +23,7 @@ module Main(
 	output o_sram_lb,
 	output o_sram_ub,
 
-	output [31:0] debug
+	output [31:0] o_curtime
 );
 
 localparam S_INIT = 0;
@@ -46,6 +46,7 @@ logic init_finish;
 
 assign mode = i_sw[2];
 assign debug = o_sram_addr / 320 + ptr_action * 100000 + mem_action * 10000;
+assign o_curtime = o_sram_addr / 32000 ;
 
 SetCodec init(
 	.i_clk(i_clk_100k),

@@ -137,13 +137,18 @@ module DE2_115(
 );
 
 	logic clk_12m, clk_100k, rst_n;
-	logic [31:0] debug, mydebug;
 	logic [17:0] sw;
     logic [3:0] key;
+	logic [31:0] cur_time;
+	logic [7:0] ones;
+	logic [7:0] tens;
+	logic [4:0] one;
+	logic [4:0] ten;
+	logic [31:0] debug;
+	assign debug = cur_time + (10000*ten) + (1000*one);
 	
 	
 	assign AUD_XCK = clk_12m;
-	assign debug = mydebug;
 	
 	Main m0(
 		.i_aud_bclk(AUD_BCLK),
@@ -168,9 +173,10 @@ module DE2_115(
 		.o_sram_ub(SRAM_UB_N),
 		.o_sram_addr(SRAM_ADDR),
 		
-		.debug(mydebug)
+		.o_curtime(cur_time)
 	);
 	
+<<<<<<< HEAD
     Debounce deb_key0(
         .i_in(KEY[0]),
         .i_clk(AUD_BCLK),
@@ -192,6 +198,10 @@ module DE2_115(
         .o_debounced(key[3])
     );
 
+=======
+	
+	
+>>>>>>> sssram
 	Debounce deb_rst(
 		.i_in(SW[17]),
         .i_clk(AUD_BCLK),
@@ -259,16 +269,26 @@ module DE2_115(
 	wire DLY_RST;
 	assign LCD_ON = 1'b1;
 	assign LCD_BLON = 1'b1;
-	assign {p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],p[12],p[13],p[14],p[15]}           = "we are DCLAB Q_Q";
+	assign  {p[0],p[1],p[2]} = "00:";
+	assign  p[3] = tens;
+	assign  p[4] = ones;
+	//assign {p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],p[12],p[13],p[14],p[15]}           = "we are DCLAB Q_Q";
 	assign {p[16],p[17],p[18],p[19],p[20],p[21],p[22],p[23],p[24],p[25],p[26],p[27],p[28],p[29],p[30],p[31]} = "Coooooooooooooon";
 	Reset_Delay r0(
 		.i_clk(CLOCK_50),
 		.o_rst(DLY_RST)
 	);
-	LCD_TEST lcd0(    
+	Num2Str ns(
+		.i_num(cur_time),
+		.o_tens(tens),
+		.o_ones(ones),
+		.o_t(ten),
+		.o_o(one)
+	);
+	LCD_TEST lcd0(
 		//    Host Side
 		.i_clk(CLOCK_50),
-      .i_RST_N(DLY_RST),
+		.i_RST_N(DLY_RST),
 		.i_p(p),
       //    LCD Side
       .LCD_DATA(LCD_DATA),
