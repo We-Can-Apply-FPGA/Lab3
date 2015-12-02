@@ -2,8 +2,8 @@ module Debounce(
 	input i_in,
 	input i_clk,
 	output o_debounced,
-	output o_neg,
-	output o_pos
+	output o_neg,        //when press has a posedge
+	output o_pos         //when rise has a posedge
 );
 	parameter CNT_N = 7;
 	localparam CNT_BIT = $clog2(CNT_N+1);

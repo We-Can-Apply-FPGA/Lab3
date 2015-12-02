@@ -143,6 +143,7 @@ logic [31:0] cur_time;
 logic [7:0] ones;
 logic [7:0] tens;
 logic [31:0] debug;
+logic [3:0] speed;
 
 assign AUD_XCK = clk_12m;
 
@@ -172,6 +173,7 @@ Main m0(
 	.o_curtime(cur_time),
 	.o_ptr_action(ptr_action),
 	.o_mem_action(mem_action),
+	.o_speed(speed),
 	.debug(debug)
 );
 
@@ -247,7 +249,7 @@ lab3 qsys(
 	.reset_reset_n(rst_n)
 );
 SevenHexDecoder seven_dec0(
-	.i_hex(debug),
+	.i_hex(speed),
 	.o_seven_1(HEX0),
 	.o_seven_2(HEX1),
 	.o_seven_3(HEX2),
@@ -269,11 +271,36 @@ always_comb begin
 	{p[27],p[28],p[29]} = "00:";
 	p[30] = tens;
 	p[31] = ones;
+	case(sw[1])
+		1: {p[10],p[11],p[12],p[13],p[14],p[15]} = "REPEAT";
+		0: {p[10],p[11],p[12],p[13],p[14],p[15]} = "  ONCE";
+	endcase
+	case(sw[3])
+		1: {p[5],p[6],p[7],p[8],p[9]} = "1-int";
+		0: {p[5],p[6],p[7],p[8],p[9]} = "0-int";
+	endcase
+	if (speed == 'b0000) {p[16], p[17],p[18],p[19],p[20],p[21]} = "NORMAL";
+	else begin
+		case(speed[3])
+			1: {p[17],p[18],p[19],p[20],p[21]} = "xSLOW";
+			0: {p[17],p[18],p[19],p[20],p[21]} = "xFAST";
+		endcase
+		case(speed[2:0])
+			0: p[16] = "1";
+			1: p[16] = "2";
+			2: p[16] = "3";
+			3: p[16] = "4";
+			4: p[16] = "5";
+			5: p[16] = "6";
+			6: p[16] = "7";
+			7: p[16] = "8";
+		endcase
+	end
 	case(ptr_action)
-		PTR_RESET: {p[0],p[1],p[2],p[3],p[4]} = " STOP";
+		PTR_RESET: {p[0],p[1],p[2],p[3],p[4]} = "STOP ";
 		PTR_PAUSE: {p[0],p[1],p[2],p[3],p[4]} = "PAUSE";
-		PTR_RIGHT: {p[0],p[1],p[2],p[3],p[4]} = ">>>  ";
-		PTR_LEFT:{p[0],p[1],p[2],p[3],p[4]} = "  <<<";
+		PTR_RIGHT: {p[0],p[1],p[2],p[3],p[4]} = " >>> ";
+		PTR_LEFT:{p[0],p[1],p[2],p[3],p[4]} = " <<< ";
 		PTR_START:begin
 			if(mem_action == MEM_READ) {p[0],p[1],p[2],p[3],p[4]} = "PLAY ";
 			else {p[0],p[1],p[2],p[3],p[4]} = " REC ";
