@@ -272,29 +272,31 @@ always_comb begin
 	p[30] = tens;
 	p[31] = ones;
 	case(sw[1])
-		1: {p[10],p[11],p[12],p[13],p[14],p[15]} = "REPEAT";
-		0: {p[10],p[11],p[12],p[13],p[14],p[15]} = "  ONCE";
+		1: {p[12],p[13],p[14],p[15]} = "<-->";
+		0: {p[12],p[13],p[14],p[15]} = "  ->";
 	endcase
 	case(sw[3])
-		1: {p[5],p[6],p[7],p[8],p[9]} = "1-int";
-		0: {p[5],p[6],p[7],p[8],p[9]} = "0-int";
+		1: {p[6],p[7],p[8],p[9],p[10]} = "1-int";
+		0: {p[6],p[7],p[8],p[9],p[10]} = "0-int";
 	endcase
-	if (speed == 'b0000) {p[16], p[17],p[18],p[19],p[20],p[21]} = "NORMAL";
-	else begin
-		case(speed[3])
-			1: {p[17],p[18],p[19],p[20],p[21]} = "xSLOW";
-			0: {p[17],p[18],p[19],p[20],p[21]} = "xFAST";
-		endcase
-		case(speed[2:0])
-			0: p[16] = "1";
-			1: p[16] = "2";
-			2: p[16] = "3";
-			3: p[16] = "4";
-			4: p[16] = "5";
-			5: p[16] = "6";
-			6: p[16] = "7";
-			7: p[16] = "8";
-		endcase
+	if(mem_action == MEM_READ)begin
+		if (speed == 'b0000) {p[16], p[17],p[18],p[19],p[20],p[21]} = "NORMAL";
+		else begin
+			case(speed[3])
+				1: {p[17],p[18],p[19],p[20],p[21]} = "xSLOW";
+				0: {p[17],p[18],p[19],p[20],p[21]} = "xFAST";
+			endcase
+			case(speed[2:0])
+				0: p[16] = "1";
+				1: p[16] = "2";
+				2: p[16] = "3";
+				3: p[16] = "4";
+				4: p[16] = "5";
+				5: p[16] = "6";
+				6: p[16] = "7";
+				7: p[16] = "8";
+			endcase
+		end
 	end
 	case(ptr_action)
 		PTR_RESET: {p[0],p[1],p[2],p[3],p[4]} = "STOP ";

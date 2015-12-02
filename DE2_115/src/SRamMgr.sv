@@ -23,7 +23,7 @@ module SRamMgr(
 logic [19:0] addr_r, addr_w, last_r, last_w;
 logic [15:0] data_r, data_w;
 logic [2:0] slow_cnt_r, slow_cnt_w;
-logic signed [15:0] prev_data_r, prev_data_w, tmpa, tmpb, tmp;
+logic signed [15:0] prev_data_r, prev_data_w;
 logic signed [15:0] data_read_out_r, data_read_out_w;
 
 assign o_sram_addr = addr_r;
@@ -42,9 +42,6 @@ always_comb begin
 	o_sram_oe = 1;
 	o_sram_lb = 1'bz;
 	o_sram_ub = 1'bz;
-	tmp = 0;
-	tmpa = 0;
-	tmpb = 0;
 	
 	case(i_ptr_action)
 		PTR_RESET: begin
@@ -93,53 +90,10 @@ always_comb begin
 							end
 							prev_data_w = io_sram_dq;
 							data_read_out_w = io_sram_dq;
-							//data_read_out_w = 0;
 						end
 						else begin
-							//tmp = io_sram_dq - prev_data_r;
-							/*
-							if (prev_data_r > io_sram_dq) begin
-								data_read_out_w = data_read_out_r - ((prev_data_r - io_sram_dq) >> 1);
-							end
-							else begin
-								data_read_out_w = data_read_out_r + ((io_sram_dq - prev_data_r) >> 1);
-							end*/
-							case (i_speed[2:0])
-								1: data_read_out_w = data_read_out_r + ((io_sram_dq - prev_data_r) / 2);
-								2: data_read_out_w = data_read_out_r + ((io_sram_dq - prev_data_r) / 3);
-								3: data_read_out_w = data_read_out_r + ((io_sram_dq - prev_data_r) / 4);
-								4: data_read_out_w = data_read_out_r + ((io_sram_dq - prev_data_r) / 5);
-								5: data_read_out_w = data_read_out_r + ((io_sram_dq - prev_data_r) / 6);
-								6: data_read_out_w = data_read_out_r + ((io_sram_dq - prev_data_r) / 7);
-								7: data_read_out_w = data_read_out_r + ((io_sram_dq - prev_data_r) / 8);
-							endcase
+							data_read_out_w = data_read_out_r + ((io_sram_dq - prev_data_r) / $signed(i_speed[2:0]+1));
 							slow_cnt_w = slow_cnt_r - 1;
-							/*
-							if (io_sram_dq - prev_data)
-							if (prev_data_r[15]) begin
-								tmpa = ~((~prev_data_r) >> 1);
-							end
-							else begin
-								tmpa = prev_data_r * slow_cnt_r / (i_speed[2:0] + 1);
-							end*/
-							/*
-							if (prev_data_r[15]) begin
-								tmpa = ~((~prev_data_r) >> 1);
-							end
-							else begin
-								tmpa = prev_data_r / 2;
-							end*//*
-							if (io_sram_dq[15]) begin
-								tmpb = ~((~io_sram_dq) >> 1);
-							end
-							else begin
-								tmpb = io_sram_dq * (i_speed[2:0] + 1 - slow_cnt_r) / (i_speed[2:0] + 1);
-							end*/
-							/*
-							if ((prev_data_r[15] && tmpa[15]) || (!prev_data_r[15] && !tmpa[15])) data_read_out_w = 0;
-							else data_read_out_w = tmpa;*/
-							//data_read_out_w = tmpa+tmpb;
-							//	+ io_sram_dq * (i_speed[2:0] + 1 - slow_cnt_r) / (i_speed[2:0] + 1);
 						end
 					end
 				end

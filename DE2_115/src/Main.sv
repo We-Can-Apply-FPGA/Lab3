@@ -44,7 +44,6 @@ logic [10:0] clk_r, clk_w;
 logic init_finish;
 logic [15:0] o_data;
 
-//assign debug = speed + o_ptr_action *1000 + o_mem_action * 100;
 assign o_curtime = o_sram_addr / 32000 ;
 
 SetCodec init(
@@ -99,7 +98,6 @@ begin
 			end
 			MEM_WRITE: begin
 				data_w = (data_r << 1) + i_adcdat;
-				//o_dacdat = i_adcdat;
 			end
 			MEM_ECHO: begin
 				o_dacdat = i_adcdat;
